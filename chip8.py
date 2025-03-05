@@ -84,11 +84,11 @@ class Chip8:
                 if self.V[x] == self.V[y]:
                     pc += 2 #skip the next instruction
 
-            case 0x6:
+            case 0x6: #LD Vx, byte
                 x = (opcode & 0x0F00) >> 8
                 self.V[x] = (opcode & 0x00FF)
             
-            case 0x7:
+            case 0x7: #ADD Vx, byte
                 x = (opcode & 0x0F00) >> 8
                 self.V[x] += (opcode & 0x00FF)
                 if self.V[x] > 255: self.V[x] -= 255
@@ -99,35 +99,35 @@ class Chip8:
                 temp = opcode & 0x000F
 
                 match temp:
-                    case 0:
+                    case 0: #LD Vx, Vy
                         self.V[x] = self.V[y]
 
-                    case 1:
+                    case 1: #OR Vx, Vy
                         self.V[x] |= self.V[y]
                     
-                    case 2:
+                    case 2: #AND Vx, Vy
                         self.V[x] &= self.V[y]
                     
-                    case 3:
+                    case 3: #XOR Vx, Vy
                         self.V[x] ^= self.V[y]
 
-                    case 4:
+                    case 4: #ADD Vx, Vy
                         self.V[x] = self.V[x] + self.V[y]
                         self.V[0xF] = 1 if (self.V[x] > 255) else 0
 
-                    case 5:
+                    case 5: #SUB Vx, Vy
                         self.V[0xF] = 1 if (self.V[x] > self.V[y]) else 0
                         self.V[x] -= self.V[y]
 
-                    case 6:
+                    case 6: #SHR Vx {, Vy}
                         self.V[0xF] = 1 if ((self.V[x] & 1) == 1) else 0
                         self.V[x] //= 2
 
-                    case 7:
+                    case 7: #SUBN Vx, Vy
                         self.V[0xF] = 1 if (self.V[y] > self.V[x]) else 0
                         self.V[x] = self.V[y] - self.V[x]
 
-                    case 14:
+                    case 14: #SHL Vx {, Vy}
                         self.V[0xF] = 1 if ((self.V[x] & 1) == 1) else 0
                         self.V[x] *= 2
 
@@ -138,49 +138,79 @@ class Chip8:
                 if self.V[x] != self.V[y]:
                     pc += 2 #skip the next instruction
 
-            case 0xA:
+            case 0xA: #LD I, addr
                 self.I = (opcode & 0x0FFF)
 
-            case 0xB:
+            case 0xB: #JP V0, addr
                 self.pc = (opcode & 0x0FFF) + self.V[0]
 
-            case 0xC:
+            case 0xC: #RND Vx, byte
                 x = (opcode & 0x0F00) >> 8
                 k = (opcode & 0x00FF)
                 rb = random.randint(0,255)
                 self.V[x] = k & rb
 
-            case 0xD:
-                pass
+            case 0xD: #DRW Vx, Vy, nibble
+                self.V[0xF] = 0
 
-            case 0xE:
-                pass
+                x = (opcode & 0x0F00) >> 8
+                y = (opcode & 0x00F0) >> 4
+                n = (opcode & 0x000F)
+
+                vx = self.V[x]
+                vy = self.V[y]
+
+                for py in range(n):
+                    sprite = self.memory[self.I + py]
+
+                    for px in range(8):
+                        pixel = (sprite >> (7-px)) & 1
+
+                        scr_x = (vx + px) % width
+                        scr_y = (vy + py) % height
+
+                        if pixel == 1 and self.gfx[scr_x][scr_y] == 1:
+                            self.V[0xF] = 1 #Collison
+                        
+                        self.gfx[scr_x][scr_y] ^= pixel
+                        
+
+            case 0xE: 
+                x = (opcode & 0x0F00) >> 8
+                kk = (opcode & 0x00FF)
+                if (kk == 0x9E): #SKP Vx
+                    if (self.keypad[self.V[x]] == 1): #key pressed
+                        self.pc += 2
+                elif (kk == 0xA1): #SKNP Vx
+                    if (self.keypad[self.V[x]] != 1): #key not pressed
+                        self.pc += 2
+
 
             case 0xF:
                 x = (opcode & 0x0F00) >> 8
                 temp = (opcode & 0x00FF)
 
                 match temp:
-                    case 0x07:
+                    case 0x07: #LD Vx, DT
                         self.V[x] = self.delay_timer
-                    case 0x0A:
+                    case 0x0A: #LD Vx, K
                         pass
-                    case 0x15:
+                    case 0x15: #LD DT, Vx
                         self.delay_timer = self.V[x]
-                    case 0x18:
+                    case 0x18: #LD ST, Vx
                         self.sound_timer = self.V[x]
-                    case 0x1E:
+                    case 0x1E: #ADD I, Vx
                         self.I += self.V[x]
-                    case 0x29:
+                    case 0x29: #LD F, Vx
                         pass
-                    case 0x33:
+                    case 0x33: #LD B, Vx
                         self.memory[self.I] = self.V[x] // 100
                         self.memory[self.I + 1] = (self.V[x] % 100) // 10
                         self.memory[self.I + 2] = self.V[x] % 10
-                    case 0x55:
+                    case 0x55: #LD [I], Vx
                         for i in range(x+1):
                             self.memory[self.I + i] = self.V[i]
-                    case 0x55:
+                    case 0x65: #LD Vx, [I]
                         for i in range(x+1):
                             self.V[i] = self.memory[self.I + i]
 
