@@ -71,18 +71,18 @@ class Chip8:
             case 0x3: #SE Vx byte - skip inst
                 x = (opcode & 0x0F00) >> 8
                 if self.V[x] == (opcode & 0x00FF):
-                    pc += 2 #skip the next instruction
+                    self.pc += 2 #skip the next instruction
 
             case 0x4: #SNE Vx byte - skip inst
                 x = (opcode & 0x0F00) >> 8
                 if self.V[x] != (opcode & 0x00FF):
-                    pc += 2 #skip the next instruction
+                    self.pc += 2 #skip the next instruction
             
             case 0x5: #SE Vx Vy - skip inst
                 x = (opcode & 0x0F00) >> 8
                 y = (opcode & 0x00F0) >> 4
                 if self.V[x] == self.V[y]:
-                    pc += 2 #skip the next instruction
+                    self.pc += 2 #skip the next instruction
 
             case 0x6: #LD Vx, byte
                 x = (opcode & 0x0F00) >> 8
@@ -136,7 +136,7 @@ class Chip8:
                 x = (opcode & 0x0F00) >> 8
                 y = (opcode & 0x00F0) >> 4
                 if self.V[x] != self.V[y]:
-                    pc += 2 #skip the next instruction
+                    self.pc += 2 #skip the next instruction
 
             case 0xA: #LD I, addr
                 self.I = (opcode & 0x0FFF)
@@ -169,10 +169,10 @@ class Chip8:
                         scr_x = (vx + px) % width
                         scr_y = (vy + py) % height
 
-                        if pixel == 1 and self.gfx[scr_x][scr_y] == 1:
+                        if pixel == 1 and self.gfx[scr_y][scr_x] == 1:
                             self.V[0xF] = 1 #Collison
                         
-                        self.gfx[scr_x][scr_y] ^= pixel
+                        self.gfx[scr_y][scr_x] ^= pixel
                         
 
             case 0xE: 
@@ -245,6 +245,8 @@ while run:
         
         if event.type == QUIT:
             run = False
+
+    chip8.emulate_cycle()
     
     # Draw graphics
     for y in range(height):
