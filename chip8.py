@@ -91,7 +91,7 @@ class Chip8:
             case 0x7: #ADD Vx, byte
                 x = (opcode & 0x0F00) >> 8
                 self.V[x] += (opcode & 0x00FF)
-                if self.V[x] > 255: self.V[x] -= 255
+                self.V[x] = self.V[x] & 0xFF
             
             case 0x8:
                 x = (opcode & 0x0F00) >> 8
@@ -114,6 +114,7 @@ class Chip8:
                     case 4: #ADD Vx, Vy
                         self.V[x] = self.V[x] + self.V[y]
                         self.V[0xF] = 1 if (self.V[x] > 255) else 0
+                        self.V[x] = self.V[x] & 0xFF
 
                     case 5: #SUB Vx, Vy
                         self.V[0xF] = 1 if (self.V[x] > self.V[y]) else 0
