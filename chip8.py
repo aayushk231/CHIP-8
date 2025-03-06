@@ -194,7 +194,17 @@ class Chip8:
                     case 0x07: #LD Vx, DT
                         self.V[x] = self.delay_timer
                     case 0x0A: #LD Vx, K
-                        pass
+                        key_pressed = False
+
+                        for i in self.keypad:
+                            if i != 0:
+                                self.V[x] = self.keypad.index(i)
+                                key_pressed = True
+                                break
+
+                        if not(key_pressed):
+                            self.pc -= 2  #Rerun = Wait for key press
+
                     case 0x15: #LD DT, Vx
                         self.delay_timer = self.V[x]
                     case 0x18: #LD ST, Vx
@@ -202,7 +212,7 @@ class Chip8:
                     case 0x1E: #ADD I, Vx
                         self.I += self.V[x]
                     case 0x29: #LD F, Vx
-                        pass
+                        self.I = self.V[x] * 5 #each sprite is 5 bytes long
                     case 0x33: #LD B, Vx
                         self.memory[self.I] = self.V[x] // 100
                         self.memory[self.I + 1] = (self.V[x] % 100) // 10
