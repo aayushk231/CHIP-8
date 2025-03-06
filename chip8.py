@@ -224,13 +224,35 @@ class Chip8:
                         for i in range(x+1):
                             self.V[i] = self.memory[self.I + i]
 
+        # Update timers
+        if self.delay_timer > 0:
+            self.delay_timer -= 1
+        if self.sound_timer > 0:
+            self.sound_timer -= 1
+
 #Screen config
 pygame.init()
 screen = pygame.display.set_mode((width*10, height*10))
+clock = pygame.time.Clock()
 
+chip8 = Chip8()
+chip8.load_rom("rom.ch8") #loading ROM  
+
+#Main loop
 run = True
 while run:
     for event in pygame.event.get():
         
         if event.type == QUIT:
             run = False
+    
+    # Draw graphics
+    for y in range(height):
+        for x in range(width):
+            if chip8.gfx[y][x] == 1:
+                pygame.draw.rect(screen, (255, 255, 255), (x * 10, y * 10, 10, 10))
+
+    pygame.display.flip()
+    clock.tick(60)  # Run at 60Hz
+
+pygame.quit()
